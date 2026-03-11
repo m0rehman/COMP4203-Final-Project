@@ -17,6 +17,6 @@ Three AP variants are compared: standard, MAC filtering only, and an adaptive AP
 
 ### Authors 
 
-Mohammad Rehman
-Yacine Saoudi
-Devanjali Das
+Mohammad Rehman  
+Yacine Saoudi  
+Devanjali Das  
