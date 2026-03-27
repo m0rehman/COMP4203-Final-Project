@@ -7,9 +7,9 @@ from .packet import packet
 
 
 class node:
-    def __init__(self, mac, x, y, tx_range, mcs=1, send_rate=100, is_attacker=False):
+    def __init__(self, mac, x, y, tx_range, mcs=1, send_rate=100, is_attacker=False, spoof_pool_size=10):
         # send_rate  : transmit once every N ticks
-        # is_attacker: if true, spoofs a new random MAC on every auth_req
+        # is_attacker: if true, spoofs MACs from a small pool on every auth_req
         self.mac = mac
         self.x = x
         self.y = y
@@ -20,6 +20,9 @@ class node:
         self.mcs = mcs
         self.send_rate = send_rate
         self.is_attacker = is_attacker
+        # attackers rotate through a fixed pool of spoofed MACs rather than generating
+        # a unique one per packet — this lets the filter accumulate counts and detect them
+        self.spoof_pool = [self._random_mac() for _ in range(spoof_pool_size)] if is_attacker else []
 
     def can_hear(self, other):
         # two nodes that can't hear each other can't do CSMA carrier sense,
@@ -28,8 +31,8 @@ class node:
         return distance <= self.tx_range
 
     def make_packet(self, ptype, dst_mac, timestamp):
-        # attackers spoof a fresh random MAC on every packet to bypass blacklists
-        src = self._random_mac() if self.is_attacker else self.mac
+        # pick a random MAC from the spoof pool if attacker, otherwise use real MAC
+        src = random.choice(self.spoof_pool) if self.is_attacker else self.mac
         size = max(1, 10 - self.mcs)
         return packet(ptype, src, dst_mac, timestamp, size)
 

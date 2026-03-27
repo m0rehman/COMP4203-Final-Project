@@ -1,23 +1,25 @@
 # adaptive_ap.py
-# extends mac_filter_ap with MCS control.
-# handles both DoS detection and hidden terminal collisions simultaneously.
+# extends mac_filter_ap with AP-controlled MCS.
+# monitors collision rate and commands nodes to increase MCS when collisions spike,
+# inducing the short packet effect to reduce transmission overlap.
 
 from .mac_filter_ap import mac_filter_ap
 
 
 class adaptive_ap(mac_filter_ap):
-   def __init__(self, nodes):
+    def __init__(self, nodes):
         super().__init__()
         self.nodes = nodes
-        self.collision_window = 3000
+        self.collision_window = 3000    # sliding window size in ms
+        self.collision_threshold = 10   # number of collisions in window before MCS increase
         self.collision_timestamps = []
-        self.collision_threshold = 10
+        self.mcs_increases = 0
 
-def receive(self, pkt, collided, timestamp):
+    def receive(self, pkt, collided, timestamp):
         if collided:
             self.collision_timestamps.append(timestamp)
 
-        # sliding window for collisions
+        # evict timestamps outside the current window
         self.collision_timestamps = [
             t for t in self.collision_timestamps
             if timestamp - t <= self.collision_window
@@ -29,7 +31,15 @@ def receive(self, pkt, collided, timestamp):
 
         super().receive(pkt, collided, timestamp)
 
-def _increase_mcs(self):
+    def _increase_mcs(self):
         for node in self.nodes:
             node.update_mcs(node.mcs + 1)
-        # print("[MCS INCREASE]")
+        self.mcs_increases += 1
+
+    def stats(self):
+        s = super().stats()
+        s.update({
+            "mcs_increases": self.mcs_increases,
+            "current_mcs": self.nodes[0].mcs if self.nodes else 1
+        })
+        return s
