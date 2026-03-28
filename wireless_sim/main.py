@@ -13,11 +13,11 @@ DURATION_MS = 10000
 def make_nodes():
     # two legitimate nodes positioned such that they can't hear each other
     # but both can reach the AP at (50, 50). this creates the hidden terminal scenario.
-    node_a = node(mac="aa:aa:aa:aa:aa:aa", x=0,   y=50, tx_range=60, send_rate=500)
-    node_b = node(mac="bb:bb:bb:bb:bb:bb", x=100, y=50, tx_range=60, send_rate=500)
+    node_a = node(mac="aa:aa:aa:aa:aa:aa", x=0,   y=50, tx_range=60, send_rate=2000)
+    node_b = node(mac="bb:bb:bb:bb:bb:bb", x=100, y=50, tx_range=60, send_rate=2000)
 
     # attacker sends much more frequently and spoofs a new MAC each time
-    attacker = node(mac="cc:cc:cc:cc:cc:cc", x=50, y=0, tx_range=60, send_rate=50, is_attacker=True)
+    attacker = node(mac="cc:cc:cc:cc:cc:cc", x=50, y=0, tx_range=60, send_rate=20, is_attacker=True)
 
     return [node_a, node_b, attacker]
 

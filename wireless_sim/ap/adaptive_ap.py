@@ -11,7 +11,7 @@ class adaptive_ap(mac_filter_ap):
         super().__init__()
         self.nodes = nodes
         self.collision_window = 3000    # sliding window size in ms
-        self.collision_threshold = 10   # number of collisions in window before MCS increase
+        self.collision_threshold = 5    # number of collisions in window before MCS increase
         self.collision_timestamps = []
         self.mcs_increases = 0
 

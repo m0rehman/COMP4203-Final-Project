@@ -26,7 +26,6 @@ class mac_filter_ap(standard_ap):
 
         mac = pkt.src_mac
 
-        # drop and count packets from already-blacklisted MACs
         if mac in self.blacklist:
             self.blocked_auths += 1
             return
@@ -34,7 +33,6 @@ class mac_filter_ap(standard_ap):
         timestamps = self.mac_requests[mac]
         timestamps.append(timestamp)
 
-        # record when the first suspicious packet arrived for latency tracking
         if self.first_attack_time is None and len(timestamps) == 1:
             self.first_attack_time = timestamp
 
