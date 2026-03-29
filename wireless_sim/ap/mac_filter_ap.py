@@ -7,15 +7,14 @@ from collections import defaultdict, deque
 
 
 class mac_filter_ap(standard_ap):
-     def __init__(self):
+    def __init__(self):
         super().__init__()
         self.mac_requests = defaultdict(deque)
         self.blacklist = set()
-        self.window = 3000  # ms
+        self.window = 3000
         self.threshold = 5
 
-
-def receive(self, pkt, collided, timestamp):
+    def receive(self, pkt, collided, timestamp):  # should be inside the class
         if collided:
             self.collisions += 1
             return
@@ -31,13 +30,10 @@ def receive(self, pkt, collided, timestamp):
         timestamps = self.mac_requests[mac]
         timestamps.append(timestamp)
 
-        # sliding window
         while timestamps and (timestamp - timestamps[0] > self.window):
             timestamps.popleft()
 
         if len(timestamps) > self.threshold:
             self.blacklist.add(mac)
-            # print(f"[BLACKLIST] {mac}")
 
         super().receive(pkt, collided, timestamp)
-
