@@ -62,7 +62,7 @@ class node:
         # generate a new packet if idle and it's time to send
         if self.state == IDLE:
             if clock % self.send_rate == 0:
-                self.pending_packet = self.make_packet("auth_req", "ap:00:00:00:00:00", clock)
+                self.pending_packet = self.make_packet("auth_req", "aa:00:00:00:00:00", clock)
                 self.state = DIFS_WAIT
                 self.difs_counter = DIFS_TICKS
             return None
