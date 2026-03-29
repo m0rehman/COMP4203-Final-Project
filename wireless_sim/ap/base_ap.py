@@ -3,7 +3,7 @@
 # all other AP variants extend this.
 
 class base_ap:
-    def __init__(self, mac="aa:00:00:00:00:00"):
+    def __init__(self, mac="00:00:00:00:00:01"):
         self.mac = mac
 
     def receive(self, pkt, collided, timestamp):

@@ -1,4 +1,4 @@
-# packet.py
+# core/packet.py
 # defines the packet structure used throughout the simulation.
 # every message sent between nodes and the AP is represented as a packet.
 

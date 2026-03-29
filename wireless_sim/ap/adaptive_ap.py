@@ -1,4 +1,3 @@
-# adaptive_ap.py
 # extends mac_filter_ap with AP-controlled MCS.
 # monitors collision rate and commands nodes to increase MCS when collisions spike,
 # inducing the short packet effect to reduce transmission overlap.
@@ -32,6 +31,8 @@ class adaptive_ap(mac_filter_ap):
         super().receive(pkt, collided, timestamp)
 
     def _increase_mcs(self):
+        # command all nodes to use a higher MCS 
+        # shorter air time, fewer collisions
         for node in self.nodes:
             node.update_mcs(node.mcs + 1)
         self.mcs_increases += 1

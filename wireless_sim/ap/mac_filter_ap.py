@@ -1,4 +1,3 @@
-# mac_filter_ap.py
 # extends standard_ap with a MAC filter buffer and sliding window monitor.
 # detects DoS flooding by tracking auth request frequency per MAC.
 
@@ -11,22 +10,22 @@ class mac_filter_ap(standard_ap):
         super().__init__()
         self.mac_requests = defaultdict(deque)
         self.blacklist = set()
-        self.window = 3000      # sliding window size in ms
-        self.threshold = 5      # max auth requests allowed per MAC per window
+        self.window = 3000
+        self.threshold = 20
         self.first_attack_time = None
         self.detection_latency = None
 
     def receive(self, pkt, collided, timestamp):
-        if collided:
-            self.collisions += 1
-            return
-
-        if pkt.ptype != "auth_req":
+        # collisions and non-auth packets are handled entirely by standard_ap
+        if collided or pkt.ptype != "auth_req":
+            super().receive(pkt, collided, timestamp)
             return
 
         mac = pkt.src_mac
 
+        # drop and count packets from already-blacklisted MACs
         if mac in self.blacklist:
+            self.total_packets += 1
             self.blocked_auths += 1
             return
 
@@ -45,14 +44,13 @@ class mac_filter_ap(standard_ap):
             if self.detection_latency is None:
                 self.detection_latency = timestamp - self.first_attack_time
 
+        # pass to standard_ap for buffer logic and counting
         super().receive(pkt, collided, timestamp)
 
     def stats(self):
-        return {
-            "received": self.received,
-            "collisions": self.collisions,
-            "blocked_auths": self.blocked_auths,
+        s = super().stats()
+        s.update({
             "blacklisted_macs": len(self.blacklist),
-            "buffer_usage": len(self.unassociated_buffer),
             "detection_latency_ms": self.detection_latency
-        }
+        })
+        return s

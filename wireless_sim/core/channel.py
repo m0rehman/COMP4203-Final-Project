@@ -1,10 +1,9 @@
-# channel.py
+# core/channel.py
 # models the wireless channel with CSMA/CA.
 # tracks active transmissions and exposes channel state so nodes can
 # perform carrier sense before transmitting.
 
 from itertools import combinations
-
 
 # 802.11 timing constants, approximated in ticks
 DIFS_TICKS = 3   # distributed interframe space — minimum idle time before transmitting
@@ -41,7 +40,7 @@ class channel:
 
     def process(self, timestamp):
         # check all transmissions that are finishing this tick for collisions.
-        # two packets collide if their senders couldn't hear each other — 
+        # two packets collide if their senders couldn't hear each other —
         # meaning neither could defer to the other via CSMA carrier sense.
         finishing = [tx for tx in self.active_transmissions if tx["end"] <= timestamp]
         self._clear_finished(timestamp)

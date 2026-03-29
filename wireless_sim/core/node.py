@@ -1,47 +1,49 @@
-# node.py
 # base class for any device in the simulation. clients and the attacker extend this.
 
 import math
 import random
 from .packet import packet
 
+# CSMA/CA state machine states
+IDLE         = 0
+DIFS_WAIT    = 1
+BACKOFF      = 2
+TRANSMITTING = 3
 
-# 802.11 CSMA/CA timing constants, approximated in ticks
+# 802.11 timing, approximated in ticks
 DIFS_TICKS = 3
-CW_MIN     = 4    # minimum contention window size
-CW_MAX     = 64   # maximum contention window size, doubles on each collision
 
-# node states for the CSMA/CA state machine
-IDLE         = "idle"
-DIFS_WAIT    = "difs_wait"
-BACKOFF      = "backoff"
-TRANSMITTING = "transmitting"
+# contention window bounds for exponential backoff
+CW_MIN = 4
+CW_MAX = 64
+
+# AP destination address
+AP_MAC = "00:00:00:00:00:01"
 
 
 class node:
     def __init__(self, mac, x, y, tx_range, mcs=1, send_rate=100, is_attacker=False, spoof_pool_size=10):
-        # send_rate  : how often this node generates a new packet to send, every N ticks
-        # is_attacker: if true, spoofs MACs from a fixed pool on every auth_req
+        # send_rate  : transmit once every N ticks
+        # is_attacker: if true, spoofs MACs from a small pool on every auth_req
         self.mac = mac
         self.x = x
         self.y = y
         self.tx_range = tx_range
         # mcs (modulation and coding scheme) controls transmission speed.
         # higher mcs = more bits per symbol = shorter air time = smaller collision window.
-        # starts at 1, AP can command it higher to address hidden terminal collisions.
         self.mcs = mcs
         self.send_rate = send_rate
         self.is_attacker = is_attacker
         # attackers rotate through a fixed pool of spoofed MACs rather than generating
-        # a unique one per packet — this lets the filter accumulate counts and detect them
+        # a unique one per packet — lets the filter accumulate counts and detect them
         self.spoof_pool = [self._random_mac() for _ in range(spoof_pool_size)] if is_attacker else []
 
-        # CSMA/CA state machine
-        self.state           = IDLE
-        self.difs_counter    = 0
+        # CSMA/CA state — only used by legitimate nodes
+        self.state = IDLE
+        self.difs_counter = 0
         self.backoff_counter = 0
-        self.cw              = CW_MIN   # contention window, grows on collision
-        self.pending_packet  = None     # packet waiting to be transmitted
+        self.cw = CW_MIN
+        self.pending_packet = None
 
     def can_hear(self, other):
         # two nodes that can't hear each other can't do CSMA carrier sense,
@@ -50,19 +52,22 @@ class node:
         return distance <= self.tx_range
 
     def make_packet(self, ptype, dst_mac, timestamp):
-        # pick a random MAC from the spoof pool if attacker, otherwise use real MAC
+        # pick a random MAC from the spoof pool if attacker, otherwise use real MAC.
+        # higher mcs reduces air time, modeled here as a smaller packet size.
         src = random.choice(self.spoof_pool) if self.is_attacker else self.mac
         size = max(1, 10 - self.mcs)
         return packet(ptype, src, dst_mac, timestamp, size)
 
     def step(self, clock, channel):
-        # CSMA/CA state machine. called every tick by the simulation.
-        # returns a (node, packet) tuple if ready to transmit, otherwise None.
+        # attackers bypass CSMA/CA entirely — the simulation delivers their
+        # packets directly to the AP, modeling management frame flooding.
+        if self.is_attacker:
+            return None
 
-        # generate a new packet if idle and it's time to send
+        # CSMA/CA state machine for legitimate nodes
         if self.state == IDLE:
             if clock % self.send_rate == 0:
-                self.pending_packet = self.make_packet("auth_req", "aa:00:00:00:00:00", clock)
+                self.pending_packet = self.make_packet("auth_req", AP_MAC, clock)
                 self.state = DIFS_WAIT
                 self.difs_counter = DIFS_TICKS
             return None
