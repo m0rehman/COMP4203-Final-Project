@@ -61,27 +61,39 @@ def run_scenario(name, ap, nodes):
     sim.run()
     for k, v in ap.stats().items():
         print(f"  {k}: {v}")
+    return ap.stats()
 
 
 def run_scenario_group(name, make_nodes_fn):
     print(f"\n=== {name} ===")
 
     random.seed(SEED)
-    run_scenario("standard ap",   standard_ap(),       make_nodes_fn())
+    std_stats = run_scenario("standard ap",   standard_ap(),       make_nodes_fn())
 
     random.seed(SEED)
-    run_scenario("mac filter ap", mac_filter_ap(),     make_nodes_fn())
+    mac_stats = run_scenario("mac filter ap", mac_filter_ap(),     make_nodes_fn())
 
     random.seed(SEED)
     nodes = make_nodes_fn()
-    run_scenario("adaptive ap",   adaptive_ap(nodes),  nodes)
+    ada_stats = run_scenario("adaptive ap",   adaptive_ap(nodes),  nodes)
+
+    return [
+        ("Standard AP",   std_stats),
+        ("MAC Filter AP", mac_stats),
+        ("Adaptive AP",   ada_stats),
+    ]
 
 
 def main():
-    run_scenario_group("scenario 1: hidden terminals only", make_hidden_terminal_nodes)
-    run_scenario_group("scenario 2: dos attack only",       make_dos_only_nodes)
-    run_scenario_group("scenario 3: combined",              make_combined_nodes)
-    run_scenario_group("scenario 4: stress test",           make_stress_nodes)
+    results = {
+        "Scenario 1\nHidden Terminals": run_scenario_group("scenario 1: hidden terminals only", make_hidden_terminal_nodes),
+        "Scenario 2\nDoS Only":         run_scenario_group("scenario 2: dos attack only",       make_dos_only_nodes),
+        "Scenario 3\nCombined":         run_scenario_group("scenario 3: combined",              make_combined_nodes),
+        "Scenario 4\nStress Test":      run_scenario_group("scenario 4: stress test",           make_stress_nodes),
+    }
+
+    from visualize import plot
+    plot(results)
 
 
 if __name__ == "__main__":
